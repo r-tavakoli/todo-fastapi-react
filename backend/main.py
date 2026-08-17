@@ -5,9 +5,9 @@ from scalar_fastapi import get_scalar_api_reference
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
 
+from backend.api.v1.dependencies import SessionDep
 from backend.api.v1.router import v1_router
 from backend.db.postgres import get_db
-
 
 # @asynccontextmanager
 # async def lifespan_handler(app: FastAPI):
@@ -28,7 +28,7 @@ def get_me():
     return {}
 
 @app.get("/health/db")
-async def get_health_db_check(session: AsyncSession = Depends(get_db)):
+async def get_health_db_check(session: SessionDep):
     try:
         await session.execute(text("SELECT 1"))
         return {"database": "connected"}
