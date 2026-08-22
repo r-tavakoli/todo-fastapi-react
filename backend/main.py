@@ -7,18 +7,19 @@ from sqlmodel import text
 
 from backend.api.v1.dependencies import SessionDep
 from backend.api.v1.router import v1_router
-from backend.db.postgres import get_db
+from backend.db.postgres import create_tables
+from backend.config import app_settings
 
-# @asynccontextmanager
-# async def lifespan_handler(app: FastAPI):
-#     await create_tables()
-#     yield
+@asynccontextmanager
+async def lifespan_handler(app: FastAPI):
+    await create_tables()
+    yield
 
 app = FastAPI(
-    title="ToDo App",
+    title=app_settings.APP_NAME,
     description="Lets do our tasks faster!",
     docs_url=None,
-    # lifespan=lifespan_handler,
+    lifespan=lifespan_handler,
 )
 
 app.include_router(v1_router)
