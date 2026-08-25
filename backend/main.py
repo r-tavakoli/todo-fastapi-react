@@ -1,18 +1,19 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from app.api.v1.dependencies import SessionDep
+from app.api.v1.router import v1_router
+from app.config import app_settings
+from app.db.postgres import create_tables
+from app.db.seed import seed_database
+from fastapi import FastAPI
 from scalar_fastapi import get_scalar_api_reference
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
 
-from backend.api.v1.dependencies import SessionDep
-from backend.api.v1.router import v1_router
-from backend.db.postgres import create_tables
-from backend.config import app_settings
 
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
     await create_tables()
+    await seed_database()
     yield
 
 app = FastAPI(

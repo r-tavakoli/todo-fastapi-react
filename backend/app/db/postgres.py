@@ -3,7 +3,8 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
-from backend.config import db_settings
+
+from app.config import db_settings
 
 _engine: AsyncEngine | None = None
 _sessionmaker: sessionmaker | None = None
@@ -39,14 +40,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Get a session for production database."""
     async_session = get_sessionmaker()
     async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+        yield session
             
 async def create_tables() -> None:
     """Create all tables in models.""" 
     engine = get_engine()  
     async with engine.begin() as connection:
-        print(SQLModel.metadata.tables)
         await connection.run_sync(SQLModel.metadata.create_all)

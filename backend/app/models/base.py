@@ -1,10 +1,8 @@
 from datetime import datetime
-from typing import Annotated
 
 from pydantic.alias_generators import to_snake
-from sqlalchemy import func
-from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlmodel import Field, SQLModel, text
+
 
 def to_snake_case(name: str) -> str:
     """Convert CamelCase to snake_case."""

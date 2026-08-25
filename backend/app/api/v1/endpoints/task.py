@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.models.task import TaskStatus
+from app.models.task import TaskStatus
 
 router = APIRouter()
 prefix = "/tasks"
