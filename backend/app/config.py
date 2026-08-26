@@ -33,7 +33,7 @@ class DatabaseSettings(BaseSettings):
     DB_POOL_RECYCLE: int
     DB_POOL_TIMEOUT: int  
     
-    DB_SCHEMAS: list[str] = ["tasks"]
+    DB_SCHEMAS: list[str] = ["tasks", "users"]
     
     model_config = _setting_config_dict
     

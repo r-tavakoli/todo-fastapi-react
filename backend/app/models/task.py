@@ -1,12 +1,14 @@
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, Column, text
 from sqlmodel import Field, Index, Relationship
 
 from app.models.base import BaseModel
 from app.models.enums import TaskOperation
-from app.models.user import User
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 _schema = "tasks"
 
@@ -59,8 +61,8 @@ class TaskAssignee(BaseModel, table=True):
         {"schema": _schema},
     )
     
-    task_id: int = Field(foreign_key=f"{_schema}.task.id", primary_key=True)
-    user_id: int = Field(foreign_key="users.user.id", primary_key=True)
+    task_id: int = Field(foreign_key=f"{_schema}.task.id")
+    user_id: int = Field(foreign_key="users.user.id")
     
     task: "Task" = Relationship(
         back_populates="assignees",
@@ -79,7 +81,7 @@ class Task(BaseModel, table=True):
     priority_id: int = Field(foreign_key=f"{_schema}.task_priority.id")
     start_date: datetime
     due_date: datetime
-    owner_id: int = Field(foreign_key="users.user.id")
+    created_by: int = Field(foreign_key="users.user.id")
         
     status: "TaskStatus" = Relationship(
         back_populates="tasks",
@@ -100,7 +102,7 @@ class Task(BaseModel, table=True):
         sa_relationship_kwargs={"innerjoin": True}
     )
     
-    assignees: "list[TaskAssignee]" = Relationship(
+    assignees: list[TaskAssignee] = Relationship(
         back_populates="task"
     )
     

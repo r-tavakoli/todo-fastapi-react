@@ -1,11 +1,14 @@
 import secrets
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship
 
 from app.models.base import BaseModel
-from app.models.task import Task, TaskAssignee
+
+if TYPE_CHECKING:
+    from app.models.task import Task, TaskAssignee
 
 _schema = "users"
 

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import app.models
 from app.api.v1.dependencies import SessionDep
 from app.api.v1.router import v1_router
 from app.config import app_settings
