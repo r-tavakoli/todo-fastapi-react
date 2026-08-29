@@ -1,19 +1,19 @@
 from contextlib import asynccontextmanager
 
 import app.models
-from app.api.v1.dependencies import SessionDep
 from app.api.v1.router import v1_router
 from app.config import app_settings
-from app.db.postgres import create_tables
+from app.core.exceptions import add_exception_handlers
 from app.db.seed import seed_database
 from fastapi import FastAPI
 from scalar_fastapi import get_scalar_api_reference
-from sqlmodel import text
+
+# from app.db.postgres import create_tables
 
 
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
-    await create_tables()
+    # await create_tables() # will created with alembic
     await seed_database()
     yield
 
@@ -24,19 +24,22 @@ app = FastAPI(
     lifespan=lifespan_handler,
 )
 
+# exception hanlder
+add_exception_handlers(app)
+
 app.include_router(v1_router)
 
 @app.get('/')
 def get_me():
     return {}
 
-@app.get("/health/db")
-async def get_health_db_check(session: SessionDep):
-    try:
-        await session.execute(text("SELECT 1"))
-        return {"database": "connected"}
-    except Exception as e:
-        return {"database error": f"{str(e)}"}
+# @app.get("/health/db")
+# async def get_health_db_check(session: SessionDep):
+#     try:
+#         await session.execute(text("SELECT 1"))
+#         return {"database": "connected"}
+#     except Exception as e:
+#         return {"database error": f"{str(e)}"}
         
 @app.get("/docs", include_in_schema=False)
 def get_scalar_docs():

@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, Column, text
+from sqlalchemy import JSON, CheckConstraint, Column, text
 from sqlmodel import Field, Index, Relationship
 
 from app.models.base import BaseModel
@@ -48,40 +48,47 @@ class TaskPriority(BaseModel, table=True):
         back_populates="priority"
     )
     
-class TaskAssignee(BaseModel, table=True):
-    __tablename__ = "task_assignee"
-    __table_args__ = (
-        Index(
-            "ix_unique_active_task_assignee",
-            "task_id",
-            "user_id",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
-        ),
-        {"schema": _schema},
-    )
+# class TaskAssignee(BaseModel, table=True):
+#     __tablename__ = "task_assignee"
+#     __table_args__ = (
+#         Index(
+#             "ix_unique_active_task_assignee",
+#             "task_id",
+#             "user_id",
+#             unique=True,
+#             postgresql_where=text("is_deleted = false"),
+#         ),
+#         {"schema": _schema},
+#     )
     
-    task_id: int = Field(foreign_key=f"{_schema}.task.id")
-    user_id: int = Field(foreign_key="users.user.id")
+#     task_id: int = Field(foreign_key=f"{_schema}.task.id")
+#     user_id: int = Field(foreign_key="users.user.id")
     
-    task: "Task" = Relationship(
-        back_populates="assignees",
-    )
+#     task: "Task" = Relationship(
+#         back_populates="assignees",
+#     )
     
-    user: "User" = Relationship(
-        back_populates="assigned_tasks",
-    )   
+#     user: "User" = Relationship(
+#         back_populates="assigned_tasks",
+#     )   
     
 class Task(BaseModel, table=True):
     __tablename__ = "task"
-    __table_args__ = {"schema": _schema}
+    # __table_args__ = {"schema": _schema}
+    __table_args__ = (
+        CheckConstraint(
+            "due_date >= start_date",
+            name="ck_task_due_date_gte_start_date",
+        ),
+        {"schema": _schema}
+    )
     
     title: str = Field(max_length=100, min_length=3)
     status_id: int = Field(foreign_key=f"{_schema}.task_status.id")    
     priority_id: int = Field(foreign_key=f"{_schema}.task_priority.id")
-    start_date: datetime
-    due_date: datetime
-    created_by: int = Field(foreign_key="users.user.id")
+    start_date: date
+    due_date: date
+    # created_by: int = Field(foreign_key="users.user.id")
         
     status: "TaskStatus" = Relationship(
         back_populates="tasks",
@@ -97,14 +104,14 @@ class Task(BaseModel, table=True):
         back_populates="task",
     )   
     
-    creator: "User" = Relationship(
-        back_populates="created_tasks",
-        sa_relationship_kwargs={"innerjoin": True}
-    )
+    # creator: "User" = Relationship(
+    #     back_populates="created_tasks",
+    #     sa_relationship_kwargs={"innerjoin": True}
+    # )
     
-    assignees: list[TaskAssignee] = Relationship(
-        back_populates="task"
-    )
+    # assignees: list[TaskAssignee] = Relationship(
+    #     back_populates="task"
+    # )
     
     
 class TaskHistory(BaseModel, table=True):
@@ -119,3 +126,4 @@ class TaskHistory(BaseModel, table=True):
     task: "Task" = Relationship(
         back_populates="task_history"
     )
+    
