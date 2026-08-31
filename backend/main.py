@@ -6,6 +6,7 @@ from app.config import app_settings
 from app.core.exceptions import add_exception_handlers
 from app.db.seed import seed_database
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from scalar_fastapi import get_scalar_api_reference
 
 # from app.db.postgres import create_tables
@@ -27,7 +28,16 @@ app = FastAPI(
 # exception hanlder
 add_exception_handlers(app)
 
-app.include_router(v1_router)
+app.include_router(v1_router, prefix="/api/v1")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get('/')
 def get_me():

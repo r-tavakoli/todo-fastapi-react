@@ -1,15 +1,30 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .base import CreateResponse, DeleteResponse, UpdateResponse
 from .user import UserResponse
 
 
+class TaskStatusResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    title: str
+    
+class TaskPriorityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    title: str
+
 class BaseTask(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
     title: str = Field(min_length=3, max_length=100)
-    status_id: int
-    priority_id: int
+    status: TaskStatusResponse
+    priority: TaskPriorityResponse
     due_date: date
     start_date: date
     
@@ -30,6 +45,7 @@ class ReadTaskResponse(BaseTask):
     is_deleted: bool
     created_on: datetime
     modified_on: datetime
+
 
 class CreateTask(BaseTask):
     pass

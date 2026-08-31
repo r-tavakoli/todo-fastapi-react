@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Container, Stack } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { TodoHeader } from "@/components/todo-header";
@@ -16,6 +16,7 @@ import { STATUS_LABELS } from "@/lib/todo-types";
 import type { AppNotification } from "@/lib/notification-types";
 import type { ChatConversation, ChatMessage } from "@/lib/chat-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
+import { getAllTasks } from "@/lib/api";
 
 const INITIAL_TODOS: Todo[] = [
   {
@@ -150,15 +151,39 @@ const INITIAL_TODOS: Todo[] = [
   },
 ];
 
+
 export default function TodoPage() {
-  const [todos, setTodos] = useState<Todo[]>(INITIAL_TODOS);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [filter, setFilter] = useState<FilterType>("all");
   const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedTodoForHistory, setSelectedTodoForHistory] = useState<Todo | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTodoForEdit, setSelectedTodoForEdit] = useState<Todo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+
+  useEffect(() => {
+    async function loadTasks() {
+      try {
+        setLoading(true);
+
+        const tasks = await getAllTasks();
+
+        setTodos(tasks);
+      } catch (error) {
+        console.error(error);
+        setError("Failed to load tasks");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTasks();
+  }, []);  
+
+  
   const addNotification = useCallback((title: string, message: string, color: string) => {
     const newNotif: AppNotification = {
       id: crypto.randomUUID(),

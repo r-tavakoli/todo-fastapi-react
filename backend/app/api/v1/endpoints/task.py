@@ -19,7 +19,14 @@ router = APIRouter()
 
 @router.get("/")
 async def get_task(task_id: int, service: TaskServiceDep) -> ReadTaskResponse:
+    """Get a task by ID."""
     task = await service.get(task_id)
+    return task
+
+@router.get("/get-all-tasks")
+async def get_all_task(service: TaskServiceDep) -> list[ReadTaskResponse]:
+    """Get all tasks."""
+    task = await service.get_all()
     return task
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
