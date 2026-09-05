@@ -1,11 +1,24 @@
 from datetime import date, datetime
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .base import CreateResponse, DeleteResponse, UpdateResponse
 from .user import UserResponse
 
+TitleType = Annotated[
+    str, 
+    Field(
+        title="Task Title", 
+        description="The title of the task", 
+        min_length=3, 
+        max_length=100
+    )
+]
 
+# ------------------------    
+# read
+# ------------------------
 class TaskStatusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -18,50 +31,69 @@ class TaskPriorityResponse(BaseModel):
     id: int
     title: str
 
-class BaseTask(BaseModel):
+class ReadTaskResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     id: int
-    title: str = Field(min_length=3, max_length=100)
+    title: TitleType
     status: TaskStatusResponse
     priority: TaskPriorityResponse
     due_date: date
     start_date: date
-    
-    @model_validator(mode='after')
-    def validate_dates(self) -> 'BaseTask':
-        """Validate that due_date is after start_date."""
-        if self.due_date is None or self.start_date is None:
-            return self
-        
-        if self.due_date < self.start_date:
-            raise ValueError(
-                f"Due date ({self.due_date}) must be greater than start date ({self.start_date})"
-            )
-        return self
-        
-class ReadTaskResponse(BaseTask):
-    # user: UserResponse
     is_deleted: bool
     created_on: datetime
     modified_on: datetime
 
-
-class CreateTask(BaseTask):
-    pass
+# ------------------------    
+# create
+# ------------------------
+class CreateTask(BaseModel):
+    title: TitleType
+    status_id: int
+    priority_id: int
+    due_date: date
+    start_date: date 
+    
+    @model_validator(mode='after')
+    def validate_dates(self) -> 'CreateTask':
+        """Validate that due_date is after start_date."""
+        if self.due_date and self.start_date and self.due_date < self.start_date:
+            raise ValueError(
+                f"Due date ({self.due_date}) must be > start date ({self.start_date})"
+            )
+        return self    
 
 class CreateTaskResponse(CreateResponse):
     pass
-    
+
+# ------------------------    
+# update 
+# ------------------------
 class UpdateTask(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=100)
+    title: TitleType | None = Field(default=None)
     status_id: int | None = None
     priority_id: int | None = None
     due_date: date | None = None
     start_date: date | None = None    
     
+    @model_validator(mode='after')
+    def validate_dates(self) -> 'UpdateTask':
+        """Validate that due_date is after start_date."""
+        if (
+            self.due_date is not None 
+            and self.start_date is not None
+            and self.due_date < self.start_date
+        ):
+            raise ValueError(
+                f"Due date ({self.due_date}) must be > start date ({self.start_date})"
+            )
+        return self    
+    
 class UpdateTaskResponse(UpdateResponse):
     pass
 
+# ------------------------    
+# delete 
+# ------------------------
 class DeleteTaskResponse(DeleteResponse):
     pass
