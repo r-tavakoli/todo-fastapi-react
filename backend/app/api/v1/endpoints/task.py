@@ -7,6 +7,7 @@ from app.schemas.task import (
     CreateTaskResponse,
     DeleteTaskResponse,
     ReadTaskResponse,
+    TaskPriorityResponse,
     UpdateTask,
     UpdateTaskResponse,
 )
@@ -18,16 +19,16 @@ tags = ["Tasks"]
 router = APIRouter()
 
 @router.get("/")
-async def get_task(task_id: int, service: TaskServiceDep) -> ReadTaskResponse:
+async def get_task(id: int, service: TaskServiceDep) -> ReadTaskResponse:
     """Get a task by ID."""
-    task = await service.get(task_id)
+    task = await service.get_task(id)
     return task
 
-@router.get("/get-all-tasks")
-async def get_all_task(service: TaskServiceDep) -> list[ReadTaskResponse]:
+@router.get("/get-tasks")
+async def get_tasks(service: TaskServiceDep) -> list[ReadTaskResponse]:
     """Get all tasks."""
-    task = await service.get_all()
-    return task
+    tasks = await service.get_tasks()
+    return tasks
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
 async def create_task(create_task: CreateTask, service: TaskServiceDep) -> CreateTaskResponse:
@@ -43,3 +44,9 @@ async def update_task(id: int, update_task: UpdateTask, service: TaskServiceDep)
 @router.delete("/delete")
 async def delete_task(id: int, service: TaskServiceDep) -> DeleteTaskResponse:
     return await service.delete(id)
+
+@router.get("/get-priorities")
+async def get_priorities(service: TaskServiceDep) -> list[TaskPriorityResponse]:
+    """Get the priority value based on the string input."""
+    priorities = await service.get_priorities()
+    return priorities

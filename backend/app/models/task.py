@@ -41,8 +41,9 @@ class TaskPriority(BaseModel, table=True):
         unique=True,
         index=True,
     )
-    
+    is_default: bool = Field(default=False, sa_column_kwargs={"server_default": "false"}) 
     color: str = Field(default="#808080",max_length=7)
+    sort_order: int = Field(default=0, sa_column_kwargs={"server_default": "0"})
     
     tasks: list["Task"] = Relationship(
         back_populates="priority"

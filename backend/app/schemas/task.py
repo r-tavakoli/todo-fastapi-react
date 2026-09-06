@@ -19,6 +19,10 @@ TitleType = Annotated[
 # ------------------------    
 # read
 # ------------------------
+class ReadTaskPriority(BaseModel):
+    id: int
+    title: str
+    
 class TaskStatusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -30,6 +34,9 @@ class TaskPriorityResponse(BaseModel):
     
     id: int
     title: str
+    is_default: bool
+    sort_order: int
+    color: str
 
 class ReadTaskResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

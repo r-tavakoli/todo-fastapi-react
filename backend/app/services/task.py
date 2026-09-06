@@ -17,6 +17,9 @@ TASK_LIST_OPTIONS = (
     selectinload(Task.priority).load_only(
         TaskPriority.id,
         TaskPriority.title,
+        TaskPriority.is_default,
+        TaskPriority.sort_order,
+        TaskPriority.color,
     ),
 )
 
@@ -34,7 +37,14 @@ class TaskService(BaseService):
         self.validate_task_exists(task)
         return task
     
-    async def get_all(self) -> list[Task]:
+    async def get_task(self, id: int) -> Task:
+        statement = select(Task).where(Task.id == id).options(*TASK_LIST_OPTIONS)
+        result = await self.session.execute(statement=statement)
+        task = result.scalar_one_or_none()
+        self.validate_task_exists(task)
+        return task
+    
+    async def get_tasks(self) -> list[Task]:
         statement = select(Task).options(*TASK_LIST_OPTIONS)
         results = await self.session.execute(statement=statement)
         tasks = results.scalars().all()            
@@ -79,6 +89,15 @@ class TaskService(BaseService):
         """Validate that a task exists and is not deleted."""
         if not task or task.is_deleted:
             raise NotFoundException()
+        
+    async def get_priorities(self) -> list[TaskPriority]:
+        statement = select(TaskPriority)
+        results = await self.session.execute(statement=statement)
+        priorities = results.scalars().all()            
+        if not priorities:
+            raise NotFoundException()
+        return priorities
+        
         
     # TODO: complete get_user_task, get_user_tasks, update_user_task, delete_user_task, create seems not needed here
     # async def get_user_task(self, id: int) -> Task:
