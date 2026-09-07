@@ -97,6 +97,14 @@ class TaskService(BaseService):
         if not priorities:
             raise NotFoundException()
         return priorities
+    
+    async def get_statuses(self) -> list[TaskStatus]:
+        statement = select(TaskStatus)
+        results = await self.session.execute(statement=statement)
+        statuses = results.scalars().all()            
+        if not statuses:
+            raise NotFoundException()
+        return statuses
         
         
     # TODO: complete get_user_task, get_user_tasks, update_user_task, delete_user_task, create seems not needed here

@@ -8,6 +8,7 @@ from app.schemas.task import (
     DeleteTaskResponse,
     ReadTaskResponse,
     TaskPriorityResponse,
+    TaskStatusResponse,
     UpdateTask,
     UpdateTaskResponse,
 )
@@ -50,3 +51,9 @@ async def get_priorities(service: TaskServiceDep) -> list[TaskPriorityResponse]:
     """Get the priority value based on the string input."""
     priorities = await service.get_priorities()
     return priorities
+
+@router.get("/get-statuses")
+async def get_statuses(service: TaskServiceDep) -> list[TaskStatusResponse]:
+    """Get the status values."""
+    statuses = await service.get_statuses()
+    return statuses
