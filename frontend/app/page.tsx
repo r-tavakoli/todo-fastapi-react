@@ -16,140 +16,140 @@ import { STATUS_LABELS } from "@/lib/todo-types";
 import type { AppNotification } from "@/lib/notification-types";
 import type { ChatConversation, ChatMessage } from "@/lib/chat-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
-import { getAllTasks } from "@/lib/api";
+import { getAllTasks, addTask, updateTask, deleteTask, TaskPriorityResponse, getPriorities, TaskStatusResponse, getStatuses } from "@/lib/api";
 
-const INITIAL_TODOS: Todo[] = [
-  {
-    id: "1",
-    title: "Review project requirements",
-    status: "completed",
-    priority: "high",
-    assignees: ["alice", "bob"],
-    startDate: "2026-02-18",
-    dueDate: "2026-02-20",
-    createdAt: new Date("2026-02-20"),
-    history: [
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-20T10:00:00"),
-        changeType: "created",
-        oldValue: null,
-        newValue: "Review project requirements",
-      },
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-20T14:30:00"),
-        changeType: "status",
-        oldValue: "todo",
-        newValue: "in-progress",
-      },
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-20T16:45:00"),
-        changeType: "status",
-        oldValue: "in-progress",
-        newValue: "completed",
-      },
-    ],
-  },
-  {
-    id: "2",
-    title: "Design wireframes for dashboard",
-    status: "in-progress",
-    priority: "high",
-    assignees: ["carol"],
-    startDate: "2026-02-25",
-    dueDate: "2026-02-28",
-    createdAt: new Date("2026-02-21"),
-    history: [
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-21T09:00:00"),
-        changeType: "created",
-        oldValue: null,
-        newValue: "Design wireframes for dashboard",
-      },
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-25T11:00:00"),
-        changeType: "status",
-        oldValue: "todo",
-        newValue: "in-progress",
-      },
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-25T13:00:00"),
-        changeType: "priority",
-        oldValue: "medium",
-        newValue: "high",
-      },
-    ],
-  },
-  {
-    id: "3",
-    title: "Set up CI/CD pipeline",
-    status: "todo",
-    priority: "medium",
-    assignees: ["dave", "eve", "alice"],
-    startDate: "2026-03-01",
-    dueDate: "2026-03-05",
-    createdAt: new Date("2026-02-22"),
-    history: [
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-22T08:30:00"),
-        changeType: "created",
-        oldValue: null,
-        newValue: "Set up CI/CD pipeline",
-      },
-    ],
-  },
-  {
-    id: "4",
-    title: "Write API documentation",
-    status: "todo",
-    priority: "low",
-    assignees: ["bob"],
-    startDate: null,
-    dueDate: null,
-    createdAt: new Date("2026-02-23"),
-    history: [
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-23T15:00:00"),
-        changeType: "created",
-        oldValue: null,
-        newValue: "Write API documentation",
-      },
-    ],
-  },
-  {
-    id: "5",
-    title: "Team sync meeting",
-    status: "completed",
-    priority: "medium",
-    assignees: ["alice", "bob", "carol", "dave"],
-    startDate: "2026-02-24",
-    dueDate: "2026-02-24",
-    createdAt: new Date("2026-02-24"),
-    history: [
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-24T09:00:00"),
-        changeType: "created",
-        oldValue: null,
-        newValue: "Team sync meeting",
-      },
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date("2026-02-24T17:00:00"),
-        changeType: "status",
-        oldValue: "todo",
-        newValue: "completed",
-      },
-    ],
-  },
-];
+// const INITIAL_TODOS: Todo[] = [
+//   {
+//     id: "1",
+//     title: "Review project requirements",
+//     status: "completed",
+//     priority: "high",
+//     assignees: ["alice", "bob"],
+//     startDate: "2026-02-18",
+//     dueDate: "2026-02-20",
+//     createdAt: new Date("2026-02-20"),
+//     history: [
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-20T10:00:00"),
+//         changeType: "created",
+//         oldValue: null,
+//         newValue: "Review project requirements",
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-20T14:30:00"),
+//         changeType: "status",
+//         oldValue: "todo",
+//         newValue: "in-progress",
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-20T16:45:00"),
+//         changeType: "status",
+//         oldValue: "in-progress",
+//         newValue: "completed",
+//       },
+//     ],
+//   },
+//   {
+//     id: "2",
+//     title: "Design wireframes for dashboard",
+//     status: "in-progress",
+//     priority: "high",
+//     assignees: ["carol"],
+//     startDate: "2026-02-25",
+//     dueDate: "2026-02-28",
+//     createdAt: new Date("2026-02-21"),
+//     history: [
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-21T09:00:00"),
+//         changeType: "created",
+//         oldValue: null,
+//         newValue: "Design wireframes for dashboard",
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-25T11:00:00"),
+//         changeType: "status",
+//         oldValue: "todo",
+//         newValue: "in-progress",
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-25T13:00:00"),
+//         changeType: "priority",
+//         oldValue: "medium",
+//         newValue: "high",
+//       },
+//     ],
+//   },
+//   {
+//     id: "3",
+//     title: "Set up CI/CD pipeline",
+//     status: "todo",
+//     priority: "medium",
+//     assignees: ["dave", "eve", "alice"],
+//     startDate: "2026-03-01",
+//     dueDate: "2026-03-05",
+//     createdAt: new Date("2026-02-22"),
+//     history: [
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-22T08:30:00"),
+//         changeType: "created",
+//         oldValue: null,
+//         newValue: "Set up CI/CD pipeline",
+//       },
+//     ],
+//   },
+//   {
+//     id: "4",
+//     title: "Write API documentation",
+//     status: "todo",
+//     priority: "low",
+//     assignees: ["bob"],
+//     startDate: null,
+//     dueDate: null,
+//     createdAt: new Date("2026-02-23"),
+//     history: [
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-23T15:00:00"),
+//         changeType: "created",
+//         oldValue: null,
+//         newValue: "Write API documentation",
+//       },
+//     ],
+//   },
+//   {
+//     id: "5",
+//     title: "Team sync meeting",
+//     status: "completed",
+//     priority: "medium",
+//     assignees: ["alice", "bob", "carol", "dave"],
+//     startDate: "2026-02-24",
+//     dueDate: "2026-02-24",
+//     createdAt: new Date("2026-02-24"),
+//     history: [
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-24T09:00:00"),
+//         changeType: "created",
+//         oldValue: null,
+//         newValue: "Team sync meeting",
+//       },
+//       {
+//         id: crypto.randomUUID(),
+//         timestamp: new Date("2026-02-24T17:00:00"),
+//         changeType: "status",
+//         oldValue: "todo",
+//         newValue: "completed",
+//       },
+//     ],
+//   },
+// ];
 
 
 export default function TodoPage() {
@@ -162,6 +162,8 @@ export default function TodoPage() {
   const [selectedTodoForEdit, setSelectedTodoForEdit] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
+  const [statuses, setStatuses] = useState<TaskStatusResponse[]>([]);
 
 
   useEffect(() => {
@@ -182,6 +184,21 @@ export default function TodoPage() {
 
     loadTasks();
   }, []);  
+
+  
+  useEffect(() => {
+    async function loadReferenceData() {
+      const [priorityData, statusData] = await Promise.all([
+        getPriorities(),
+        getStatuses(),
+      ]);
+  
+      setPriorities(priorityData);
+      setStatuses(statusData);
+    }
+  
+    loadReferenceData();
+  }, []);
 
   
   const addNotification = useCallback((title: string, message: string, color: string) => {
@@ -244,33 +261,46 @@ export default function TodoPage() {
     return todos.filter((t) => t.status === filter);
   }, [todos, filter]);
 
-  const handleAdd = (title: string, priority: Todo["priority"], startDate: string | null, dueDate: string | null, assignees: string[]) => {
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      title,
-      status: "todo",
-      priority,
-      assignees,
-      startDate,
-      dueDate,
-      createdAt: new Date(),
-      history: [
-        {
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-          changeType: "created",
-          oldValue: null,
-          newValue: title,
-        },
-      ],
-    };
-    setTodos((prev) => [newTodo, ...prev]);
-    addNotification("Task added", `"${title}" has been added to your list.`, "indigo");
-    notifications.show({
-      title: "Task added",
-      message: `"${title}" has been added to your list.`,
-      color: "indigo",
-    });
+  // add task
+  const handleAdd = async (
+    title: string,
+    priorityId: string,
+    startDate: string | null,
+    dueDate: string | null,
+    assignees: string[]
+  ) => {
+    try {
+      const task = await addTask({
+        title,
+        status_id: 1,
+        priority_id: Number(priorityId),
+        start_date: startDate,
+        due_date: dueDate,
+        // assignees: [],
+      });
+  
+      setTodos((prev) => [task, ...prev]);
+  
+      addNotification(
+        "Task added",
+        `"${title}" has been added to your list.`,
+        "indigo"
+      );
+  
+      notifications.show({
+        title: "Task added",
+        message: `"${title}" has been added to your list.`,
+        color: "indigo",
+      });
+    } catch (error) {
+      console.error(error);
+  
+      notifications.show({
+        title: "Error",
+        message: "Failed to create task.",
+        color: "red",
+      });
+    }
   };
 
   const handleStatusChange = (id: string, status: TodoStatus) => {
@@ -306,17 +336,23 @@ export default function TodoPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    const todo = todos.find((t) => t.id === id);
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-    if (todo) {
-      addNotification("Task deleted", `"${todo.title}" has been permanently removed.`, "red");
-      notifications.show({
-        title: "Task deleted",
-        message: `"${todo.title}" has been permanently removed.`,
-        color: "red",
-      });
-    }
+  const handleDelete = async (id: number) => {
+    try {
+      const todo = todos.find((t) => t.id === id);
+      await deleteTask(Number(id));
+      setTodos((prev) => prev.filter((t) => t.id !== id));
+
+      if (todo) {
+        addNotification("Task deleted", `"${todo.title}" has been permanently removed.`, "red");
+        notifications.show({
+          title: "Task deleted",
+          message: `"${todo.title}" has been permanently removed.`,
+          color: "red",
+        });
+      }
+    } catch (error) {
+        console.error("Failed to delete task:", error);
+      }    
   };
 
   const handleOpenEdit = (todo: Todo) => {
@@ -324,16 +360,32 @@ export default function TodoPage() {
     setEditModalOpen(true);
   };
 
-  const handleSaveEdit = (updatedFields: Partial<Todo>) => {
+  const handleSaveEdit = async (updatedFields: Partial<Todo>) => {
     if (!selectedTodoForEdit) return;
 
-    setTodos((prev) =>
-      prev.map((t) => {
-        if (t.id === selectedTodoForEdit.id) {
+    try {
+      await updateTask(selectedTodoForEdit.id, {
+        title: updatedFields.title || selectedTodoForEdit.title,
+        status_id: updatedFields.statusId ?? selectedTodoForEdit.statusId,
+        priority_id: updatedFields.priorityId ?? selectedTodoForEdit.priorityId,
+        start_date: updatedFields.startDate ?? selectedTodoForEdit.startDate,
+        due_date: updatedFields.dueDate ?? selectedTodoForEdit.dueDate,
+      });
+  
+      
+      setTodos((prev) =>
+        prev.map((t) => {
+          if (t.id !== selectedTodoForEdit.id) {
+            return t;
+          }
+          
           const history: any[] = [];
-
+  
           // Track title changes
-          if (updatedFields.title && updatedFields.title !== t.title) {
+          if (
+            updatedFields.title !== undefined &&
+            updatedFields.title !== t.title
+          ) {
             history.push({
               id: crypto.randomUUID(),
               timestamp: new Date(),
@@ -342,9 +394,12 @@ export default function TodoPage() {
               newValue: updatedFields.title,
             });
           }
-
+  
           // Track status changes
-          if (updatedFields.status && updatedFields.status !== t.status) {
+          if (
+            updatedFields.status !== undefined &&
+            updatedFields.status !== t.status
+          ) {
             history.push({
               id: crypto.randomUUID(),
               timestamp: new Date(),
@@ -353,9 +408,13 @@ export default function TodoPage() {
               newValue: updatedFields.status,
             });
           }
-
+  
+  
           // Track priority changes
-          if (updatedFields.priority && updatedFields.priority !== t.priority) {
+          if (
+            updatedFields.priority !== undefined &&
+            updatedFields.priority !== t.priority
+          ) {
             history.push({
               id: crypto.randomUUID(),
               timestamp: new Date(),
@@ -364,9 +423,12 @@ export default function TodoPage() {
               newValue: updatedFields.priority,
             });
           }
-
+  
           // Track due date changes
-          if (updatedFields.dueDate !== undefined && updatedFields.dueDate !== t.dueDate) {
+          if (
+            updatedFields.dueDate !== undefined &&
+            updatedFields.dueDate !== t.dueDate
+          ) {
             history.push({
               id: crypto.randomUUID(),
               timestamp: new Date(),
@@ -375,9 +437,12 @@ export default function TodoPage() {
               newValue: updatedFields.dueDate,
             });
           }
-
+  
           // Track start date changes
-          if (updatedFields.startDate !== undefined && updatedFields.startDate !== t.startDate) {
+          if (
+            updatedFields.startDate !== undefined &&
+            updatedFields.startDate !== t.startDate
+          ) {
             history.push({
               id: crypto.randomUUID(),
               timestamp: new Date(),
@@ -386,39 +451,43 @@ export default function TodoPage() {
               newValue: updatedFields.startDate,
             });
           }
-
+  
           // Track assignee changes
-          if (
-            updatedFields.assignees &&
-            JSON.stringify(updatedFields.assignees) !== JSON.stringify(t.assignees)
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "assignees",
-              oldValue: JSON.stringify(t.assignees),
-              newValue: JSON.stringify(updatedFields.assignees),
-            });
-          }
-
+          // if (
+          //   updatedFields.assignees &&
+          //   JSON.stringify(updatedFields.assignees) !== JSON.stringify(t.assignees)
+          // ) {
+          //   history.push({
+          //     id: crypto.randomUUID(),
+          //     timestamp: new Date(),
+          //     changeType: "assignees",
+          //     oldValue: JSON.stringify(t.assignees),
+          //     newValue: JSON.stringify(updatedFields.assignees),
+          //   });
+          // }
+  
           return {
             ...t,
             ...updatedFields,
             history: [...t.history, ...history],
           };
-        }
-        return t;
-      })
-    );
+        })
+      );
+  
+      setSelectedTodoForEdit(null);
+        
+      // addNotification("Task updated", "Task has been updated successfully.", "blue");
+      notifications.show({
+        title: "Task updated",
+        message: "Task has been updated successfully.",
+        color: "blue",
+      });
+  
+      setEditModalOpen(false);
 
-    addNotification("Task updated", "Task has been updated successfully.", "blue");
-    notifications.show({
-      title: "Task updated",
-      message: "Task has been updated successfully.",
-      color: "blue",
-    });
-
-    setEditModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
   };
 
   const handleOpenHistory = (todo: Todo) => {
@@ -440,6 +509,8 @@ export default function TodoPage() {
         onClose={() => setEditModalOpen(false)}
         todo={selectedTodoForEdit}
         onSave={handleSaveEdit}
+        priorities={priorities}
+        statuses={statuses}
       />
       <TaskHistoryModal
         opened={historyModalOpen}
@@ -463,6 +534,7 @@ export default function TodoPage() {
                   <TodoItem
                     key={todo.id}
                     todo={todo}
+                    priorities={priorities}
                     onStatusChange={handleStatusChange}
                     onDelete={handleDelete}
                     onOpenEdit={handleOpenEdit}

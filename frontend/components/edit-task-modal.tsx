@@ -11,15 +11,18 @@ import {
   Text,
 } from "@mantine/core";
 import { useState, useEffect } from "react";
-import type { Todo, TodoStatus } from "@/lib/todo-types";
+import type { Todo, TodoPriority, TodoStatus } from "@/lib/todo-types";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/lib/todo-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
+import { getPriorities, getStatuses, type TaskStatusResponse, type TaskPriorityResponse } from "@/lib/api";
 
 interface EditTaskModalProps {
   opened: boolean;
   onClose: () => void;
   todo: Todo | null;
   onSave: (updatedTodo: Partial<Todo>) => void;
+  priorities: TaskPriorityResponse[];
+  statuses: TaskStatusResponse[];
 }
 
 export function EditTaskModal({
@@ -27,14 +30,43 @@ export function EditTaskModal({
   onClose,
   todo,
   onSave,
+  priorities,
+  statuses,
 }: EditTaskModalProps) {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<TodoStatus>("todo");
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [priority, setPriority] = useState<TodoPriority>("medium");
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assignees, setAssignees] = useState<string[]>([]);
+  // const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
+  // const [statuses, setStatuses] = useState<TaskStatusResponse[]>([]);
 
+  // useEffect(() => {
+  //   async function loadPriorities() {
+  //     try {
+  //       const data = await getPriorities();
+  //       setPriorities(data);
+  //     } catch (error) {
+  //       console.error("Failed to load priorities:", error);
+  //     }
+  //   };
+  //   loadPriorities();
+  // }, []);
+
+  
+  // useEffect(() => {
+  //   async function loadStatuses() {
+  //     try {
+  //       const data = await getStatuses();
+  //       setStatuses(data);
+  //     } catch (error) {
+  //       console.error("Failed to load statuses:", error);
+  //     }
+  //   };
+  //   loadStatuses();
+  // }, []);
+  
   useEffect(() => {
     if (todo) {
       setTitle(todo.title);
@@ -45,24 +77,46 @@ export function EditTaskModal({
       setAssignees(todo.assignees);
     }
   }, [todo, opened]);
+  
 
-  const handleSave = () => {
+  const handleSave = () => {  
     if (!title.trim()) {
       return;
     }
-
-    onSave({
+  
+    const selectedPriority = priorities.find(
+      (p) => p.title.toLowerCase() === priority
+    );
+  
+    if (!selectedPriority) {
+      return;
+    }
+  
+    const selectedStatus = statuses.find(
+      (s) => s.title.toLowerCase().replace(" ", "-") === status
+    );
+  
+    if (!selectedStatus) {
+      return;
+    }
+  
+    const updatedFields = {
       title: title.trim(),
       status,
+      statusId: selectedStatus.id,
       priority,
-      startDate: startDate || null,
-      dueDate: dueDate || null,
-      assignees,
-    });
-
+      priorityId: selectedPriority.id,
+      startDate: startDate,
+      dueDate: dueDate,
+    };
+  
+    console.log("Calling onSave:", updatedFields);
+  
+    onSave(updatedFields);
+  
     onClose();
   };
-
+  
   if (!todo) return null;
 
   return (
@@ -89,12 +143,14 @@ export function EditTaskModal({
             Status
           </Text>
           <Select
-            value={status}
-            onChange={(value) => setStatus(value as TodoStatus)}
-            data={Object.entries(STATUS_LABELS).map(([key, label]) => ({
-              value: key,
-              label,
-            }))}
+          value={status}
+          onChange={(value) =>
+            setStatus(value as TodoStatus)
+          }
+          data={statuses.map((status) => ({
+            value: status.title.toLowerCase().replace(" ", "-"),
+            label: status.title,
+          }))}
           />
         </div>
 
@@ -105,11 +161,12 @@ export function EditTaskModal({
           <Select
             value={priority}
             onChange={(value) =>
-              setPriority(value as "low" | "medium" | "high")
+              setPriority(value as TodoPriority)
             }
-            data={Object.entries(PRIORITY_LABELS).map(([key, label]) => ({
-              value: key,
-              label,
+            // here
+            data={priorities.map((priority) => ({
+              value: priority.title.toLowerCase().replace(" ", "-"),
+              label: priority.title,
             }))}
           />
         </div>

@@ -5,11 +5,14 @@ import { useForm } from "@mantine/form";
 import { IconPlus, IconCalendar } from "@/components/icons";
 import type { Todo } from "@/lib/todo-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
+import { useEffect, useState } from "react";
+import { TaskPriorityResponse, getPriorities } from "@/lib/api";
+
 
 interface AddTodoFormProps {
   onAdd: (
     title: string,
-    priority: Todo["priority"],
+    priorityId: string,
     startDate: string | null,
     dueDate: string | null,
     assignees: string[]
@@ -17,10 +20,36 @@ interface AddTodoFormProps {
 }
 
 export function AddTodoForm({ onAdd }: AddTodoFormProps) {
+
+  const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
+  useEffect(() => {
+    async function loadPriorities() {
+      try {
+        const data = await getPriorities();
+        setPriorities(data);
+        const defaultPriority = data.find(
+          (priority) => priority.is_default
+        );
+        
+        if (defaultPriority) {
+          form.setFieldValue(
+            "priorityId",
+            String(defaultPriority.id)
+          );
+        }      
+        
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  
+    loadPriorities();
+  }, []);
+
   const form = useForm({
     initialValues: {
       title: "",
-      priority: "medium" as Todo["priority"],
+      priorityId: "",
       startDate: "",
       dueDate: "",
       assignees: [] as string[],
@@ -34,7 +63,7 @@ export function AddTodoForm({ onAdd }: AddTodoFormProps) {
   const handleSubmit = (values: typeof form.values) => {
     onAdd(
       values.title.trim(),
-      values.priority,
+      values.priorityId,
       values.startDate || null,
       values.dueDate || null,
       values.assignees
@@ -78,15 +107,16 @@ export function AddTodoForm({ onAdd }: AddTodoFormProps) {
             {...form.getInputProps("dueDate")}
           />
           <Select
-            data={[
-              { value: "low", label: "Low" },
-              { value: "medium", label: "Medium" },
-              { value: "high", label: "High" },
-            ]}
+            data={priorities
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((priority) => ({
+                value: String(priority.id),
+                label: priority.title,
+              }))}
             size="md"
             className="w-[130px]"
             allowDeselect={false}
-            {...form.getInputProps("priority")}
+            {...form.getInputProps("priorityId")}
           />
           <Button
             type="submit"

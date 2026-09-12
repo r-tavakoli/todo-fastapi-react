@@ -11,7 +11,7 @@ import {
   Menu,
   Avatar,
 } from "@mantine/core";
-import { useState } from "react";
+import React from "react";
 import {
   IconTrash,
   IconEdit,
@@ -22,16 +22,18 @@ import {
   IconHistory,
 } from "@/components/icons";
 import {
-  PRIORITY_COLORS,
   PRIORITY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
 } from "@/lib/todo-types";
 import type { Todo, TodoStatus } from "@/lib/todo-types";
 import { getMemberById } from "@/lib/team-members";
+import { TaskPriorityResponse } from "@/lib/api";
+
 
 interface TodoItemProps {
   todo: Todo;
+  priorities: TaskPriorityResponse[];
   onStatusChange: (id: string, status: TodoStatus) => void;
   onDelete: (id: string) => void;
   onOpenEdit: (todo: Todo) => void;
@@ -64,9 +66,16 @@ const STATUS_ICONS: Record<TodoStatus, React.ReactNode> = {
   completed: <IconCheck size={16} />,
 };
 
-export function TodoItem({ todo, onStatusChange, onDelete, onOpenEdit, onOpenHistory }: TodoItemProps) {
+export function TodoItem({ todo, priorities, onStatusChange, onDelete, onOpenEdit, onOpenHistory }: TodoItemProps) {
   const isCompleted = todo.status === "completed";
 
+  const priorityColors = Object.fromEntries(
+    priorities.map((priority) => [
+      priority.title.toLowerCase(),
+      priority.color,
+    ])
+  ); 
+  
   return (
     <Paper
       className={`border border-border bg-card p-4 transition-all hover:shadow-sm ${
@@ -117,7 +126,7 @@ export function TodoItem({ todo, onStatusChange, onDelete, onOpenEdit, onOpenHis
             <Badge
               size="sm"
               variant="light"
-              color={PRIORITY_COLORS[todo.priority]}
+              color={priorityColors[todo.priority]}
               className="shrink-0"
             >
               {PRIORITY_LABELS[todo.priority]}
@@ -133,6 +142,7 @@ export function TodoItem({ todo, onStatusChange, onDelete, onOpenEdit, onOpenHis
           </div>
         </Group>
         <Group gap="sm" wrap="nowrap" className="shrink-0">
+          {/*correct this todo.assignees.length*/}
           {todo.assignees.length > 0 && (
             <Tooltip
               label={todo.assignees
