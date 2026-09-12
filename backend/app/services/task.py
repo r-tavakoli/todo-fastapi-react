@@ -38,18 +38,26 @@ class TaskService(BaseService):
         return task
     
     async def get_task(self, id: int) -> Task:
-        statement = select(Task).where(Task.id == id).options(*TASK_LIST_OPTIONS)
+        statement = (
+            select(Task)
+            .where(Task.id == id, Task.is_deleted == False)
+            .options(*TASK_LIST_OPTIONS)
+        )
         result = await self.session.execute(statement=statement)
         task = result.scalar_one_or_none()
         self.validate_task_exists(task)
         return task
     
     async def get_tasks(self) -> list[Task]:
-        statement = select(Task).options(*TASK_LIST_OPTIONS)
+        statement = (
+            select(Task)
+            .where(Task.is_deleted.is_(False))
+            .options(*TASK_LIST_OPTIONS)
+        )
         results = await self.session.execute(statement=statement)
         tasks = results.scalars().all()            
         if not tasks:
-            raise NotFoundException()
+            raise NotFoundException(entity="Task", detail="No task found")
         return tasks    
     
     async def add(self, create_task: CreateTask) -> Task:
@@ -79,7 +87,7 @@ class TaskService(BaseService):
     async def delete(self, id: int) -> Task:
         task = await self.session.get(Task, id)
         self.validate_task_exists(task)
-        self._delete(task)
+        return await self._delete(task)
         
     async def add_task_history(self, task_history: TaskHistory):
         task_history = TaskHistory(**task_history.model_dump())      
@@ -88,7 +96,7 @@ class TaskService(BaseService):
     def validate_task_exists(self, task: Task) -> None:
         """Validate that a task exists and is not deleted."""
         if not task or task.is_deleted:
-            raise NotFoundException()
+            raise NotFoundException(entity="Task", detail="Task does not exist")
         
     async def get_priorities(self) -> list[TaskPriority]:
         statement = select(TaskPriority)
