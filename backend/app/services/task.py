@@ -63,6 +63,14 @@ class TaskService(BaseService):
     async def add(self, create_task: CreateTask) -> Task:
         task = Task(**create_task.model_dump())     
         task = await self._add(task)
+
+        history = self.history_tracker.build_history(
+            TaskOperation.CREATE, 
+            after=task, 
+            columns_to_track=list(CreateTask.model_fields.keys())
+        )
+        if history:
+            await self.add_task_history(history)
         return task
     
     async def update(self, id: int , update_task: UpdateTask) -> Task:
@@ -70,10 +78,14 @@ class TaskService(BaseService):
             task = await self._get(id)
             self.validate_task_exists(task)
             
-            before = self.history_tracker.track_history(task)
+            before = self.history_tracker.snapshot(task)
             task.sqlmodel_update(update_task)
             task = await self._update(task) 
-            history = self.history_tracker.create_history(before, task, TaskOperation.UPDATE)
+            history = self.history_tracker.build_history(
+                TaskOperation.UPDATE, 
+                after=task, 
+                before=before, 
+            )
             
             if history:
                 await self.add_task_history(history)
@@ -83,7 +95,6 @@ class TaskService(BaseService):
             await self.session.rollback()
             raise
 
-    
     async def delete(self, id: int) -> Task:
         task = await self.session.get(Task, id)
         self.validate_task_exists(task)
@@ -113,6 +124,14 @@ class TaskService(BaseService):
         if not statuses:
             raise NotFoundException()
         return statuses
+    
+    async def get_task_changes_history(self, task_id: int) -> list[TaskHistory]:
+        statement = select(TaskHistory).where(TaskHistory.task_id == task_id)
+        results = await self.session.execute(statement=statement)
+        task_history = results.scalars().all()
+        if not task_history:
+            raise NotFoundException()
+        return task_history
         
         
     # TODO: complete get_user_task, get_user_tasks, update_user_task, delete_user_task, create seems not needed here

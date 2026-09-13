@@ -1,7 +1,9 @@
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.models.enums import TaskOperation
 
 from .base import CreateResponse, DeleteResponse, UpdateResponse
 from .user import UserResponse
@@ -50,6 +52,13 @@ class ReadTaskResponse(BaseModel):
     is_deleted: bool
     created_on: datetime
     modified_on: datetime
+    
+class ReadTaskHistoryResponse(BaseModel):
+    id: int
+    operation: TaskOperation
+    before: dict[str, Any]
+    after: dict[str, Any]
+    created_on: datetime
 
 # ------------------------    
 # create

@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from typing import Any, Generic, TypeVar
 
+from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
 
@@ -48,41 +49,72 @@ class HistoryTracker(Generic[T, H]):
         self.extra_fields = extra_fields or {}
         self.entity_id_field_name = entity_id_field_name
     
-    def _get_data(self, entity: T) -> dict[str, Any]:
+    def snapshot(self, entity: T, columns: list[str] | None = None) -> dict[str, Any]:
+        """Capture the current state of an entity as a dict."""
         state = {}
-        from sqlalchemy import inspect
+        
         for column in inspect(entity.__class__).columns:
             field_name = column.name
-            if field_name not in self.exclude_fields:
-                value = getattr(entity, field_name)
-                if isinstance(value, datetime):
-                    value = value.isoformat()
-                state[field_name] = value
+            
+            if field_name in self.exclude_fields:
+                continue
+            
+            # Skip fields not in the requested set (if provided)
+            if columns is not None and field_name not in columns:
+                continue
+                
+            state[field_name] = self.to_json_safe(getattr(entity, field_name))
+            
         return state
     
-    def _serialize_dates(self, value: date) -> str:
-        """Convert date objects to strings for JSON serialization."""
-        return value.isoformat() if isinstance(value, date) else value
-
-    def _extract_data_changes(self, before: dict, after: dict):
+    def diff(self, before: dict, after: dict) -> tuple[dict, dict]:
+        """Return only the fields that changed between two snapshots."""
         before_ = {}
         after_ = {}
-        if before != after:
-            for key in after.keys():
-                if key in before and before[key] != after[key]:
-                    before_[key] = self._serialize_dates(before[key])
-                    after_[key] = self._serialize_dates(after[key])
-        return before_, after_
-        
-    def track_history(self, entity: T) -> dict:
-        return self._get_data(entity)
-    
-    def create_history(self, before: dict, after: T, operation: TaskOperation) -> H:
-        after_dict = self._get_data(after)
-        
-        before_change, after_change = self._extract_data_changes(before, after_dict)
 
-        if not after_change:
+        for key, value in after.items():
+            if key in before and before[key] != value:
+                before_[key] = before[key]
+                after_[key] = value
+                
+        return before_, after_
+
+    def to_json_safe(self, value: Any) -> Any:
+        """Recursively convert date/datetime to ISO strings."""
+        if isinstance(value, (date, datetime)):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {k: self.to_json_safe(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [self.to_json_safe(v) for v in value]
+        return value    
+    
+    def build_history(
+        self,
+        operation: TaskOperation,
+        after: T,
+        before: dict | None = None,
+        columns_to_track: list[str] | None = None,
+    ) -> H:
+        """Build a history record from the before/after snapshots."""
+        entity_id = after.id
+        before = before or {}
+        after = {} if operation == TaskOperation.DELETE else self.snapshot(after, columns=columns_to_track)
+        
+        print("="*50)
+        print(before)
+        print(after)
+        
+        if operation == TaskOperation.UPDATE:
+            before_change, after_change = self.diff(before, after)
+        else:
+            before_change, after_change = before, after
+
+        print("="*50)
+        print(before_change)
+        print(after_change)
+
+        if not after:
             return None
         
         history = self.history_model(
@@ -91,8 +123,7 @@ class HistoryTracker(Generic[T, H]):
             after=after_change
         )
         
-        setattr(history, self.entity_id_field_name, after.id)
+        setattr(history, self.entity_id_field_name, entity_id)
         
         return history    
-    
 

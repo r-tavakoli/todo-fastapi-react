@@ -6,6 +6,7 @@ from app.schemas.task import (
     CreateTask,
     CreateTaskResponse,
     DeleteTaskResponse,
+    ReadTaskHistoryResponse,
     ReadTaskResponse,
     TaskPriorityResponse,
     TaskStatusResponse,
@@ -57,3 +58,9 @@ async def get_statuses(service: TaskServiceDep) -> list[TaskStatusResponse]:
     """Get the status values."""
     statuses = await service.get_statuses()
     return statuses
+
+@router.get("/get-changes-history")
+async def get_task_changes_history(task_id: int, service: TaskServiceDep) -> list[ReadTaskHistoryResponse]:
+    """Get the history of task's changes."""
+    task_history = await service.get_task_changes_history(task_id)
+    return task_history

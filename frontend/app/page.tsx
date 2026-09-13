@@ -11,146 +11,23 @@ import { TodoFilters } from "@/components/todo-filters";
 import { TodoEmpty } from "@/components/todo-empty";
 import { TaskHistoryModal } from "@/components/task-history-modal";
 import { EditTaskModal } from "@/components/edit-task-modal";
-import type { Todo, FilterType, TodoStatus } from "@/lib/todo-types";
+import type { Todo, FilterType, TodoStatus, HistoryEntry } from "@/lib/todo-types";
 import { STATUS_LABELS } from "@/lib/todo-types";
 import type { AppNotification } from "@/lib/notification-types";
 import type { ChatConversation, ChatMessage } from "@/lib/chat-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
-import { getAllTasks, addTask, updateTask, deleteTask, TaskPriorityResponse, getPriorities, TaskStatusResponse, getStatuses } from "@/lib/api";
-
-// const INITIAL_TODOS: Todo[] = [
-//   {
-//     id: "1",
-//     title: "Review project requirements",
-//     status: "completed",
-//     priority: "high",
-//     assignees: ["alice", "bob"],
-//     startDate: "2026-02-18",
-//     dueDate: "2026-02-20",
-//     createdAt: new Date("2026-02-20"),
-//     history: [
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-20T10:00:00"),
-//         changeType: "created",
-//         oldValue: null,
-//         newValue: "Review project requirements",
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-20T14:30:00"),
-//         changeType: "status",
-//         oldValue: "todo",
-//         newValue: "in-progress",
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-20T16:45:00"),
-//         changeType: "status",
-//         oldValue: "in-progress",
-//         newValue: "completed",
-//       },
-//     ],
-//   },
-//   {
-//     id: "2",
-//     title: "Design wireframes for dashboard",
-//     status: "in-progress",
-//     priority: "high",
-//     assignees: ["carol"],
-//     startDate: "2026-02-25",
-//     dueDate: "2026-02-28",
-//     createdAt: new Date("2026-02-21"),
-//     history: [
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-21T09:00:00"),
-//         changeType: "created",
-//         oldValue: null,
-//         newValue: "Design wireframes for dashboard",
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-25T11:00:00"),
-//         changeType: "status",
-//         oldValue: "todo",
-//         newValue: "in-progress",
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-25T13:00:00"),
-//         changeType: "priority",
-//         oldValue: "medium",
-//         newValue: "high",
-//       },
-//     ],
-//   },
-//   {
-//     id: "3",
-//     title: "Set up CI/CD pipeline",
-//     status: "todo",
-//     priority: "medium",
-//     assignees: ["dave", "eve", "alice"],
-//     startDate: "2026-03-01",
-//     dueDate: "2026-03-05",
-//     createdAt: new Date("2026-02-22"),
-//     history: [
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-22T08:30:00"),
-//         changeType: "created",
-//         oldValue: null,
-//         newValue: "Set up CI/CD pipeline",
-//       },
-//     ],
-//   },
-//   {
-//     id: "4",
-//     title: "Write API documentation",
-//     status: "todo",
-//     priority: "low",
-//     assignees: ["bob"],
-//     startDate: null,
-//     dueDate: null,
-//     createdAt: new Date("2026-02-23"),
-//     history: [
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-23T15:00:00"),
-//         changeType: "created",
-//         oldValue: null,
-//         newValue: "Write API documentation",
-//       },
-//     ],
-//   },
-//   {
-//     id: "5",
-//     title: "Team sync meeting",
-//     status: "completed",
-//     priority: "medium",
-//     assignees: ["alice", "bob", "carol", "dave"],
-//     startDate: "2026-02-24",
-//     dueDate: "2026-02-24",
-//     createdAt: new Date("2026-02-24"),
-//     history: [
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-24T09:00:00"),
-//         changeType: "created",
-//         oldValue: null,
-//         newValue: "Team sync meeting",
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         timestamp: new Date("2026-02-24T17:00:00"),
-//         changeType: "status",
-//         oldValue: "todo",
-//         newValue: "completed",
-//       },
-//     ],
-//   },
-// ];
-
+import {
+  getAllTasks,
+  addTask,
+  updateTask,
+  deleteTask,
+  getPriorities,
+  getStatuses,
+  TaskPriorityResponse,
+  TaskStatusResponse,
+  getTaskHistory,
+  mapHistoryToEntries,
+} from "@/lib/api";
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -164,7 +41,7 @@ export default function TodoPage() {
   const [error, setError] = useState<string | null>(null);
   const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
   const [statuses, setStatuses] = useState<TaskStatusResponse[]>([]);
-
+  const [taskHistory, setTaskHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     async function loadTasks() {
@@ -490,9 +367,23 @@ export default function TodoPage() {
     }
   };
 
-  const handleOpenHistory = (todo: Todo) => {
-    setSelectedTodoForHistory(todo);
-    setHistoryModalOpen(true);
+  const handleOpenHistory = async (todo: Todo) => {
+    try{
+      setSelectedTodoForHistory(todo);
+      setTaskHistory([]);
+      setHistoryModalOpen(true);
+      
+      const records = await getTaskHistory(todo.id);
+      const history = mapHistoryToEntries(
+        records,
+        statuses,
+        priorities,
+      );
+  
+      setTaskHistory(history);
+    } catch (error) {
+      console.error("Failed to fetch task history:", error);
+    }    
   };
 
   return (
@@ -516,6 +407,7 @@ export default function TodoPage() {
         opened={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
         todo={selectedTodoForHistory}
+        history={taskHistory}
       />
       <main className="flex-1 py-8">
         <Container size="md">
