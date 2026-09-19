@@ -101,18 +101,10 @@ class HistoryTracker(Generic[T, H]):
         before = before or {}
         after = {} if operation == TaskOperation.DELETE else self.snapshot(after, columns=columns_to_track)
         
-        print("="*50)
-        print(before)
-        print(after)
-        
         if operation == TaskOperation.UPDATE:
             before_change, after_change = self.diff(before, after)
         else:
             before_change, after_change = before, after
-
-        print("="*50)
-        print(before_change)
-        print(after_change)
 
         if not after:
             return None

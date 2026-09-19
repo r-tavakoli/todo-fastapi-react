@@ -9,8 +9,6 @@ class BaseUser(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    user_name: str = Field(ge=3)
-    password: str = Field(ge=3)
         
 class ReadUser(BaseUser):
     pass
@@ -21,13 +19,8 @@ class CreateUser(BaseUser):
 class CreateUserResponse(CreateResponse):
     pass
 
-class UserResponse(BaseModel):
-    id: int
-    first_name: str
-    last_name: str
-    email: str
-    user_name: str
-    is_active: bool
-    is_email_verified: bool
-    created_on: datetime
-    modified_on: datetime
+class LoginUser(BaseModel):
+    email: EmailStr
+
+class LoginUserResponse(BaseModel):
+    message: str = "code sent successfully"

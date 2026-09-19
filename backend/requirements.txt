@@ -4,3 +4,5 @@ alembic
 sqlmodel
 asyncpg
 fastapi-mail
+passlib 
+bcrypt

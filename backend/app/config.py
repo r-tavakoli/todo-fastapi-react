@@ -14,6 +14,7 @@ class AppSettings(BaseSettings):
     
     model_config = _setting_config_dict
 
+
 class DatabaseSettings(BaseSettings):
     POSTGRE_SERVER: str
     POSTGRE_PORT: int
@@ -45,5 +46,16 @@ class DatabaseSettings(BaseSettings):
     def POSTGRE_TEST_DB_URL(self):
         return f"postgresql+asyncpg://{self.POSTGRE_TEST_USER_NAME}:{self.POSTGRE_TEST_PASSWORD}@{self.POSTGRE_TEST_SERVER}:{self.POSTGRE_TEST_PORT}/{self.POSTGRE_TEST_DB}"    
     
+    
+class SecuritySettings(BaseSettings):
+    JWT_ALGORITHM: str
+    JWT_SECRET_KEY: str       
+    
+    model_config = _setting_config_dict      
+    
+    
+    
+    
 app_settings = AppSettings()    
 db_settings = DatabaseSettings()
+security_settings = SecuritySettings()

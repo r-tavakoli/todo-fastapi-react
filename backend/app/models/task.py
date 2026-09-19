@@ -49,33 +49,32 @@ class TaskPriority(BaseModel, table=True):
         back_populates="priority"
     )
     
-# class TaskAssignee(BaseModel, table=True):
-#     __tablename__ = "task_assignee"
-#     __table_args__ = (
-#         Index(
-#             "ix_unique_active_task_assignee",
-#             "task_id",
-#             "user_id",
-#             unique=True,
-#             postgresql_where=text("is_deleted = false"),
-#         ),
-#         {"schema": _schema},
-#     )
+class TaskAssignee(BaseModel, table=True):
+    __tablename__ = "task_assignee"
+    __table_args__ = (
+        Index(
+            "ix_unique_active_task_assignee",
+            "task_id",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": _schema},
+    )
     
-#     task_id: int = Field(foreign_key=f"{_schema}.task.id")
-#     user_id: int = Field(foreign_key="users.user.id")
+    task_id: int = Field(foreign_key=f"{_schema}.task.id")
+    user_id: int = Field(foreign_key="users.user.id")
     
-#     task: "Task" = Relationship(
-#         back_populates="assignees",
-#     )
+    task: "Task" = Relationship(
+        back_populates="assignees",
+    )
     
-#     user: "User" = Relationship(
-#         back_populates="assigned_tasks",
-#     )   
+    user: "User" = Relationship(
+        back_populates="assigned_tasks",
+    )   
     
 class Task(BaseModel, table=True):
     __tablename__ = "task"
-    # __table_args__ = {"schema": _schema}
     __table_args__ = (
         CheckConstraint(
             "due_date >= start_date",
@@ -89,7 +88,7 @@ class Task(BaseModel, table=True):
     priority_id: int = Field(foreign_key=f"{_schema}.task_priority.id")
     start_date: date
     due_date: date
-    # created_by: int = Field(foreign_key="users.user.id")
+    created_by: int = Field(foreign_key="users.user.id")
         
     status: "TaskStatus" = Relationship(
         back_populates="tasks",
@@ -105,14 +104,14 @@ class Task(BaseModel, table=True):
         back_populates="task",
     )   
     
-    # creator: "User" = Relationship(
-    #     back_populates="created_tasks",
-    #     sa_relationship_kwargs={"innerjoin": True}
-    # )
+    creator: "User" = Relationship(
+        back_populates="created_tasks",
+        sa_relationship_kwargs={"innerjoin": True}
+    )
     
-    # assignees: list[TaskAssignee] = Relationship(
-    #     back_populates="task"
-    # )
+    assignees: list[TaskAssignee] = Relationship(
+        back_populates="task"
+    )
     
     
 class TaskHistory(BaseModel, table=True):
