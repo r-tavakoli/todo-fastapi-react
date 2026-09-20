@@ -76,6 +76,13 @@ class InvalidTokenException(BaseAppException):
     def __init__(self, detail = None):
         super().__init__(detail, headers=BEARER_HEADER)       
         
+class InvalidPasswordTokenException(BaseAppException):
+    status_code=status.HTTP_401_UNAUTHORIZED
+    default_detail="OTP is invalid or expired"  
+    error_code = "INVALID_PASSWORD_TOKEN"
+    
+    def __init__(self, detail = None):
+        super().__init__(detail, headers=BEARER_HEADER)       
         
 class NotAuthenticatedException(BaseAppException):
     status_code=status.HTTP_401_UNAUTHORIZED

@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from .base import CreateResponse
 
@@ -10,8 +8,21 @@ class BaseUser(BaseModel):
     last_name: str
     email: EmailStr
         
-class ReadUser(BaseUser):
-    pass
+class CreatorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    email: EmailStr
+    
+class UserAssigneesResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    first_name: str
+    last_name: str
+    email: EmailStr
 
 class CreateUser(BaseUser):
     pass
@@ -19,8 +30,13 @@ class CreateUser(BaseUser):
 class CreateUserResponse(CreateResponse):
     pass
 
-class LoginUser(BaseModel):
+class PasswordCredential(BaseModel):
     email: EmailStr
 
-class LoginUserResponse(BaseModel):
+class PasswordCredentialResponse(BaseModel):
+    id: int
     message: str = "code sent successfully"
+    
+class LoginResponse(BaseModel):
+    access_token: str
+    jwt_type: str = "jwt"

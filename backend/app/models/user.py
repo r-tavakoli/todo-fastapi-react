@@ -1,4 +1,3 @@
-import secrets
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -49,16 +48,8 @@ class LoginPassCode(BaseModel, table=True):
     user: "User" = Relationship(
         back_populates="login_pass_codes",    
     )
-
-    @staticmethod
-    def generate_code() -> str:
-        return f"{secrets.randbelow(1_000_000):06d}"
-            
+    
+    @property
     def is_expired(self) -> bool:
         """Check if the passcode has expired."""
         return datetime.now() > self.expires_at
-    
-    @property
-    def is_valid(self) -> bool:
-        """Check if the passcode can be used (not expired and not used)."""        
-        return not self.is_used and not self.is_expired()

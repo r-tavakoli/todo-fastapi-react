@@ -113,6 +113,11 @@ class Task(BaseModel, table=True):
         back_populates="task"
     )
     
+    @property
+    def task_assignees(self) -> list["User"]:
+        """Flat list of assigned users."""
+        return [link.user for link in self.assignees]    
+    
     
 class TaskHistory(BaseModel, table=True):
     __tablename__ = "task_history"

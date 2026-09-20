@@ -4,9 +4,9 @@ from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.enums import TaskOperation
+from app.schemas.user import CreatorResponse, UserAssigneesResponse
 
 from .base import CreateResponse, DeleteResponse, UpdateResponse
-from .user import UserResponse
 
 TitleType = Annotated[
     str, 
@@ -45,6 +45,8 @@ class ReadTaskResponse(BaseModel):
     
     id: int
     title: TitleType
+    creator: CreatorResponse
+    task_assignees: list[UserAssigneesResponse]
     status: TaskStatusResponse
     priority: TaskPriorityResponse
     due_date: date
@@ -69,6 +71,7 @@ class CreateTask(BaseModel):
     priority_id: int
     due_date: date
     start_date: date 
+    assignee_ids: list[int] = [] 
     
     @model_validator(mode='after')
     def validate_dates(self) -> 'CreateTask':
@@ -91,6 +94,7 @@ class UpdateTask(BaseModel):
     priority_id: int | None = None
     due_date: date | None = None
     start_date: date | None = None    
+    assignee_ids: list[int] | None = None
     
     @model_validator(mode='after')
     def validate_dates(self) -> 'UpdateTask':

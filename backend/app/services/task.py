@@ -1,11 +1,13 @@
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, with_loader_criteria
 from sqlmodel import select
 
 from app.core.exceptions import NotFoundException
 from app.models.enums import TaskOperation
-from app.models.task import Task, TaskHistory, TaskPriority, TaskStatus
+from app.models.task import Task, TaskAssignee, TaskHistory, TaskPriority, TaskStatus
+from app.models.user import User
 from app.schemas.task import CreateTask, UpdateTask
 from app.services.base import BaseService, HistoryTracker
 
@@ -21,6 +23,25 @@ TASK_LIST_OPTIONS = (
         TaskPriority.sort_order,
         TaskPriority.color,
     ),
+    selectinload(Task.creator).load_only(
+        User.id,
+        User.first_name,
+        User.last_name,
+        User.email
+    ),
+    selectinload(Task.assignees)
+    .selectinload(TaskAssignee.user)
+    .load_only(
+        User.id,
+        User.first_name,
+        User.last_name,
+        User.email
+    ),
+    with_loader_criteria(
+        TaskAssignee,
+        TaskAssignee.is_deleted.is_(False),
+        include_aliases=True,
+    ),    
 )
 
 class TaskService(BaseService):
@@ -61,26 +82,63 @@ class TaskService(BaseService):
         return tasks    
     
     async def add(self, create_task: CreateTask) -> Task:
-        task = Task(**create_task.model_dump())     
-        task = await self._add(task)
-
+        
+        # Extract the assignee IDs and remove them from the dict
+        assignee_ids = create_task.assignee_ids
+        task_data = create_task.model_dump(exclude={"assignee_ids"})     
+        
+        task = Task(**task_data)     
+        self.session.add(task)
+        await self.session.flush() # flush (not commit) to get task.id
+        
+        # Create the link row
+        if assignee_ids:
+            links = [
+                TaskAssignee(task_id=task.id, user_id=uid)
+                for uid in set(assignee_ids)
+            ]
+            self.session.add_all(links)
+            await self.session.flush()
+            
+        # Record task history
         history = self.history_tracker.build_history(
             TaskOperation.CREATE, 
             after=task, 
             columns_to_track=list(CreateTask.model_fields.keys())
         )
+        
         if history:
             await self.add_task_history(history)
+            
+        # Commit data
+        await self.session.commit()
+        await self.session.refresh(task)
+        
         return task
     
     async def update(self, id: int , update_task: UpdateTask) -> Task:
         try:
-            task = await self._get(id)
+            # Fetch the task with its current assignees
+            task = await self.get_task(id)
             self.validate_task_exists(task)
             
+            # Snapshot before 
             before = self.history_tracker.snapshot(task)
-            task.sqlmodel_update(update_task)
-            task = await self._update(task) 
+            
+            # Separate assignees from other fields
+            update_data = update_task.model_dump(exclude_unset=True, exclude={"assignee_ids"}, exclude_none=True)
+                    
+            # Apply non-assignee fields        
+            if update_data:
+                task.sqlmodel_update(update_data)
+                await self.session.flush()
+                
+            # Apply assignee changes if the client sent them        
+            if update_task.assignee_ids is not None:
+                await self._replace_assignees(task, set(update_task.assignee_ids))
+                await self.session.flush()
+                    
+            # Build history                
             history = self.history_tracker.build_history(
                 TaskOperation.UPDATE, 
                 after=task, 
@@ -90,7 +148,11 @@ class TaskService(BaseService):
             if history:
                 await self.add_task_history(history)
                 
-            return task
+            # One atomic commit
+            await self.session.commit()
+            await self.session.refresh(task)
+            return task            
+
         except IntegrityError:
             await self.session.rollback()
             raise
@@ -132,9 +194,40 @@ class TaskService(BaseService):
         if not task_history:
             raise NotFoundException()
         return task_history
-        
-        
-    # TODO: complete get_user_task, get_user_tasks, update_user_task, delete_user_task, create seems not needed here
-    # async def get_user_task(self, id: int) -> Task:
-    #     statement = select(Task).where.options(*TASK_LIST_OPTIONS)
-    #     return task            
+            
+    async def _replace_assignees(self, task: Task, new_user_ids: set[int]) -> None:
+        """Replace the task's assignees with the given user IDs."""
+        current_user_ids = {assignee.user_id for assignee in task.assignees}
+
+        # Validate that all users exist
+        if new_user_ids:
+            valid_ids = set(
+                await self.session.scalars(
+                    select(User.id).where(User.id.in_(new_user_ids))
+                )
+            )
+            missing = new_user_ids - valid_ids
+            if missing:
+                missing_ids = ', '.join(missing)
+                raise NotFoundException(entity="User", detail=f"User id(s) not found {missing_ids}")
+
+        # Remove users no longer assigned
+        to_remove = current_user_ids - new_user_ids
+        if to_remove:
+            await self.session.execute(
+                update(TaskAssignee)
+                .where(
+                    TaskAssignee.task_id == task.id,
+                    TaskAssignee.user_id.in_(to_remove),
+                )
+                .values(is_deleted = True)
+            )
+
+        # Add new users
+        to_add = new_user_ids - current_user_ids
+        if to_add:
+            self.session.add_all([
+                TaskAssignee(task_id=task.id, user_id=uid)
+                for uid in to_add
+            ])            
+                

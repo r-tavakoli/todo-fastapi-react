@@ -38,10 +38,7 @@ async def create_task(create_task: CreateTask, service: TaskServiceDep) -> Creat
 
 @router.patch("/update")
 async def update_task(id: int, update_task: UpdateTask, service: TaskServiceDep) -> UpdateTaskResponse:
-    task = update_task.model_dump(exclude_none=True)
-    if not task:
-        raise BadRequestException()
-    return await service.update(id, task)
+    return await service.update(id, update_task)
 
 @router.delete("/delete")
 async def delete_task(id: int, service: TaskServiceDep) -> DeleteTaskResponse:

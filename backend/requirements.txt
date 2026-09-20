@@ -6,3 +6,5 @@ asyncpg
 fastapi-mail
 passlib 
 bcrypt
+PyJWT
+redis
