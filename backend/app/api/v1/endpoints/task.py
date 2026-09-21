@@ -1,7 +1,6 @@
 from fastapi import APIRouter, status
 
-from app.api.dependencies import TaskServiceDep
-from app.core.exceptions import BadRequestException
+from app.api.dependencies import CurrentUserDep, TaskServiceDep
 from app.schemas.task import (
     CreateTask,
     CreateTaskResponse,
@@ -20,8 +19,8 @@ tags = ["Tasks"]
 
 router = APIRouter()
 
-@router.get("/")
-async def get_task(id: int, service: TaskServiceDep) -> ReadTaskResponse:
+@router.get("/get-task")
+async def get_task(id: int, current_user: CurrentUserDep, service: TaskServiceDep) -> ReadTaskResponse:
     """Get a task by ID."""
     task = await service.get_task(id)
     return task

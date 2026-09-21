@@ -6,7 +6,7 @@ import { IconPlus, IconCalendar } from "@/components/icons";
 import type { Todo } from "@/lib/todo-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
 import { useEffect, useState } from "react";
-import { TaskPriorityResponse, getPriorities } from "@/lib/api";
+import { TaskPriorityResponse, getPriorities, getUsers, UserResponse } from "@/lib/api";
 
 
 interface AddTodoFormProps {
@@ -22,30 +22,39 @@ interface AddTodoFormProps {
 export function AddTodoForm({ onAdd }: AddTodoFormProps) {
 
   const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);  
   useEffect(() => {
-    async function loadPriorities() {
+    async function loadReferenceData() {
       try {
-        const data = await getPriorities();
-        setPriorities(data);
-        const defaultPriority = data.find(
+        const [priorityData, userData] = await Promise.all([
+          getPriorities(),
+          getUsers(),
+        ]);
+  
+        setPriorities(priorityData);
+        setUsers(userData);
+  
+        const defaultPriority = priorityData.find(
           (priority) => priority.is_default
         );
-        
+  
         if (defaultPriority) {
           form.setFieldValue(
             "priorityId",
             String(defaultPriority.id)
           );
-        }      
-        
+        }
       } catch (error) {
         console.error(error);
       }
     }
   
-    loadPriorities();
+    loadReferenceData();
   }, []);
 
+  
+
+  
   const form = useForm({
     initialValues: {
       title: "",
@@ -82,7 +91,10 @@ export function AddTodoForm({ onAdd }: AddTodoFormProps) {
         />
         <Group gap="sm" align="flex-end">
           <MultiSelect
-            data={TEAM_MEMBERS.map((m) => ({ value: m.id, label: m.name }))}
+            data={users.map((user) => ({
+              value: String(user.id),
+              label: `${user.first_name}`,
+            }))}
             placeholder="Assignees"
             size="md"
             className="flex-1"

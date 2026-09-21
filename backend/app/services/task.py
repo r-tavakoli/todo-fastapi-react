@@ -197,9 +197,10 @@ class TaskService(BaseService):
             
     async def _replace_assignees(self, task: Task, new_user_ids: set[int]) -> None:
         """Replace the task's assignees with the given user IDs."""
-        current_user_ids = {assignee.user_id for assignee in task.assignees}
+        # Only active links are "currently assigned"
+        current_active_ids = {link.user_id for link in task.assignees if not link.is_deleted}
 
-        # Validate that all users exist
+        # Validate users exist
         if new_user_ids:
             valid_ids = set(
                 await self.session.scalars(
@@ -208,26 +209,28 @@ class TaskService(BaseService):
             )
             missing = new_user_ids - valid_ids
             if missing:
-                missing_ids = ', '.join(missing)
-                raise NotFoundException(entity="User", detail=f"User id(s) not found {missing_ids}")
+                raise NotFoundException(
+                    entity="User",
+                    detail=f"User id(s) not found: {', '.join(map(str, missing))}",
+                )
 
-        # Remove users no longer assigned
-        to_remove = current_user_ids - new_user_ids
+        # Soft-delete removed assignees
+        to_remove = current_active_ids - new_user_ids
         if to_remove:
             await self.session.execute(
                 update(TaskAssignee)
                 .where(
                     TaskAssignee.task_id == task.id,
                     TaskAssignee.user_id.in_(to_remove),
+                    TaskAssignee.is_deleted.is_(False),
                 )
-                .values(is_deleted = True)
+                .values(is_deleted=True)
             )
 
-        # Add new users
-        to_add = new_user_ids - current_user_ids
+        # Insert a new active row for every requested user not currently active
+        to_add = new_user_ids - current_active_ids
         if to_add:
             self.session.add_all([
-                TaskAssignee(task_id=task.id, user_id=uid)
+                TaskAssignee(task_id=task.id, user_id=uid)   # is_deleted defaults to False
                 for uid in to_add
-            ])            
-                
+            ])

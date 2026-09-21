@@ -142,27 +142,24 @@ export function TodoItem({ todo, priorities, onStatusChange, onDelete, onOpenEdi
           </div>
         </Group>
         <Group gap="sm" wrap="nowrap" className="shrink-0">
-          {/*correct this todo.assignees.length*/}
           {todo.assignees.length > 0 && (
             <Tooltip
-              label={todo.assignees
-                .map((id) => getMemberById(id)?.name ?? id)
+              label={todo.assigneeDetails
+                .map((assignee) => assignee.firstName)
                 .join(", ")}
             >
               <Avatar.Group spacing="sm">
-                {todo.assignees.slice(0, 3).map((id) => {
-                  const member = getMemberById(id);
-                  return (
+                {todo.assigneeDetails.slice(0, 3).map((assignee) => (
                     <Avatar
-                      key={id}
+                      key={assignee.id}
                       size="sm"
                       radius="xl"
-                      color={member?.color ?? "gray"}
+                      // color={member?.color ?? "gray"}
+                      color="gray"
                     >
-                      {(member?.name ?? id).charAt(0).toUpperCase()}
+                      {(assignee.firstName ?? assignee.id).charAt(0).toUpperCase()}
                     </Avatar>
-                  );
-                })}
+                ))}
                 {todo.assignees.length > 3 && (
                   <Avatar size="sm" radius="xl" color="gray">
                     +{todo.assignees.length - 3}

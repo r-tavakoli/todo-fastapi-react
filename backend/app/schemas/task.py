@@ -71,6 +71,7 @@ class CreateTask(BaseModel):
     priority_id: int
     due_date: date
     start_date: date 
+    created_by: int = Field(default=1)
     assignee_ids: list[int] = [] 
     
     @model_validator(mode='after')

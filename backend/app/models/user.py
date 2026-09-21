@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from app.models.task import Task, TaskAssignee
 
 _schema = "users"
-
+COLORS = ["indigo", "teal", "pink", "orange", "cyan"]
 
 class User(BaseModel, table=True):
     __tablename__ = "user"
@@ -22,6 +23,7 @@ class User(BaseModel, table=True):
     is_active: bool = Field(default=True)
     last_login: datetime | None = Field(default=None)
     last_logout: datetime | None = Field(default=None)
+    # color: str = Field(default_factory=lambda: random.choice(COLORS))
     
     login_pass_codes: list["LoginPassCode"] = Relationship(
         back_populates="user",

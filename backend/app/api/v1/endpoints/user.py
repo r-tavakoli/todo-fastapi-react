@@ -13,6 +13,7 @@ from app.schemas.user import (
     LoginResponse,
     PasswordCredential,
     PasswordCredentialResponse,
+    ReadUsersResponse,
 )
 
 router = APIRouter()
@@ -56,3 +57,9 @@ async def logout(
     return {
         "detail": "Successfully logged out"
     }
+    
+@router.get("/get-users")
+async def get_users(
+    service: UserServiceDep
+) -> list[ReadUsersResponse]:
+    return await service.get_users()

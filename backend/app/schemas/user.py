@@ -40,3 +40,8 @@ class PasswordCredentialResponse(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     jwt_type: str = "jwt"
+    
+class ReadUsersResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str

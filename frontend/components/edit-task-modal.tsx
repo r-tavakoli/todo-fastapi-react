@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import type { Todo, TodoPriority, TodoStatus } from "@/lib/todo-types";
 import { STATUS_LABELS, PRIORITY_LABELS } from "@/lib/todo-types";
 import { TEAM_MEMBERS } from "@/lib/team-members";
-import { getPriorities, getStatuses, type TaskStatusResponse, type TaskPriorityResponse } from "@/lib/api";
+import { getPriorities, getStatuses, type TaskStatusResponse, type TaskPriorityResponse, UserResponse } from "@/lib/api";
 
 interface EditTaskModalProps {
   opened: boolean;
@@ -23,6 +23,7 @@ interface EditTaskModalProps {
   onSave: (updatedTodo: Partial<Todo>) => void;
   priorities: TaskPriorityResponse[];
   statuses: TaskStatusResponse[];
+  assignees: UserResponse[];
 }
 
 export function EditTaskModal({
@@ -32,13 +33,15 @@ export function EditTaskModal({
   onSave,
   priorities,
   statuses,
+  assignees,
 }: EditTaskModalProps) {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<TodoStatus>("todo");
   const [priority, setPriority] = useState<TodoPriority>("medium");
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [assignees, setAssignees] = useState<string[]>([]);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  // const [assignees, setAssignees] = useState<string[]>([]);
   // const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
   // const [statuses, setStatuses] = useState<TaskStatusResponse[]>([]);
 
@@ -74,7 +77,9 @@ export function EditTaskModal({
       setPriority(todo.priority);
       setStartDate(todo.startDate || "");
       setDueDate(todo.dueDate || "");
-      setAssignees(todo.assignees);
+      setSelectedAssignees(
+        todo.assignees.map((id) => String(id))
+      );
     }
   }, [todo, opened]);
   
@@ -108,6 +113,7 @@ export function EditTaskModal({
       priorityId: selectedPriority.id,
       startDate: startDate,
       dueDate: dueDate,
+      assignees: selectedAssignees.map(Number),
     };
   
     console.log("Calling onSave:", updatedFields);
@@ -198,12 +204,12 @@ export function EditTaskModal({
             Assignees
           </Text>
           <MultiSelect
-            value={assignees}
-            onChange={setAssignees}
-            data={TEAM_MEMBERS.map((member) => ({
-              value: member.id,
-              label: member.name,
+            data={assignees.map((assignee) => ({
+              value: String(assignee.id),
+              label: `${assignee.first_name}`,
             }))}
+            value={selectedAssignees}
+            onChange={setSelectedAssignees}
             placeholder="Select team members"
             searchable
           />

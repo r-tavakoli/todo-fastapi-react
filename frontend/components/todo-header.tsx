@@ -65,14 +65,14 @@ export function TodoHeader({
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Label>Account</Menu.Label>
-              <Menu.Item
+              {/*<Menu.Label>Account</Menu.Label>*/}
+              {/*<Menu.Item
                 leftSection={<IconLock size={16} />}
                 onClick={() => router.push("/change-password")}
               >
                 Change password
-              </Menu.Item>
-              <Menu.Divider />
+              </Menu.Item>*/}
+              {/*<Menu.Divider />*/}
               <Menu.Item
                 leftSection={<IconLogout size={16} />}
                 onClick={() => router.push("/login")}

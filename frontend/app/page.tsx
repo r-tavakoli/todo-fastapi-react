@@ -27,6 +27,8 @@ import {
   TaskStatusResponse,
   getTaskHistory,
   mapHistoryToEntries,
+  UserResponse,
+  getUsers
 } from "@/lib/api";
 
 export default function TodoPage() {
@@ -41,6 +43,7 @@ export default function TodoPage() {
   const [error, setError] = useState<string | null>(null);
   const [priorities, setPriorities] = useState<TaskPriorityResponse[]>([]);
   const [statuses, setStatuses] = useState<TaskStatusResponse[]>([]);
+  const [assignees, setAssignees] = useState<UserResponse[]>([]);
   const [taskHistory, setTaskHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
@@ -65,13 +68,15 @@ export default function TodoPage() {
   
   useEffect(() => {
     async function loadReferenceData() {
-      const [priorityData, statusData] = await Promise.all([
+      const [priorityData, statusData, assigneesData] = await Promise.all([
         getPriorities(),
         getStatuses(),
+        getUsers(),
       ]);
   
       setPriorities(priorityData);
       setStatuses(statusData);
+      setAssignees(assigneesData);
     }
   
     loadReferenceData();
@@ -144,7 +149,8 @@ export default function TodoPage() {
     priorityId: string,
     startDate: string | null,
     dueDate: string | null,
-    assignees: string[]
+    assignees: string[],
+    created_by: number,
   ) => {
     try {
       const task = await addTask({
@@ -153,10 +159,12 @@ export default function TodoPage() {
         priority_id: Number(priorityId),
         start_date: startDate,
         due_date: dueDate,
-        // assignees: [],
+        assignee_ids: assignees.map(Number),
+        created_by: 1
       });
-  
-      setTodos((prev) => [task, ...prev]);
+
+      const tasks = await getAllTasks();
+      setTodos(tasks);
   
       addNotification(
         "Task added",
@@ -247,87 +255,90 @@ export default function TodoPage() {
         priority_id: updatedFields.priorityId ?? selectedTodoForEdit.priorityId,
         start_date: updatedFields.startDate ?? selectedTodoForEdit.startDate,
         due_date: updatedFields.dueDate ?? selectedTodoForEdit.dueDate,
+        assignee_ids: updatedFields.assignees ?? selectedTodoForEdit.assignees,
       });
-  
+
+      const tasks = await getAllTasks();
+      setTodos(tasks);
       
-      setTodos((prev) =>
-        prev.map((t) => {
-          if (t.id !== selectedTodoForEdit.id) {
-            return t;
-          }
+      // setTodos((prev) =>
+      //   prev.map((t) => {
+      //     if (t.id !== selectedTodoForEdit.id) {
+      //       return t;
+      //     }
           
-          const history: any[] = [];
+      //     const history: any[] = [];
   
-          // Track title changes
-          if (
-            updatedFields.title !== undefined &&
-            updatedFields.title !== t.title
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "title",
-              oldValue: t.title,
-              newValue: updatedFields.title,
-            });
-          }
+      //     // Track title changes
+      //     if (
+      //       updatedFields.title !== undefined &&
+      //       updatedFields.title !== t.title
+      //     ) {
+      //       history.push({
+      //         id: crypto.randomUUID(),
+      //         timestamp: new Date(),
+      //         changeType: "title",
+      //         oldValue: t.title,
+      //         newValue: updatedFields.title,
+      //       });
+      //     }
   
-          // Track status changes
-          if (
-            updatedFields.status !== undefined &&
-            updatedFields.status !== t.status
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "status",
-              oldValue: t.status,
-              newValue: updatedFields.status,
-            });
-          }
+      //     // Track status changes
+      //     if (
+      //       updatedFields.status !== undefined &&
+      //       updatedFields.status !== t.status
+      //     ) {
+      //       history.push({
+      //         id: crypto.randomUUID(),
+      //         timestamp: new Date(),
+      //         changeType: "status",
+      //         oldValue: t.status,
+      //         newValue: updatedFields.status,
+      //       });
+      //     }
   
   
-          // Track priority changes
-          if (
-            updatedFields.priority !== undefined &&
-            updatedFields.priority !== t.priority
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "priority",
-              oldValue: t.priority,
-              newValue: updatedFields.priority,
-            });
-          }
+      //     // Track priority changes
+      //     if (
+      //       updatedFields.priority !== undefined &&
+      //       updatedFields.priority !== t.priority
+      //     ) {
+      //       history.push({
+      //         id: crypto.randomUUID(),
+      //         timestamp: new Date(),
+      //         changeType: "priority",
+      //         oldValue: t.priority,
+      //         newValue: updatedFields.priority,
+      //       });
+      //     }
   
-          // Track due date changes
-          if (
-            updatedFields.dueDate !== undefined &&
-            updatedFields.dueDate !== t.dueDate
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "dueDate",
-              oldValue: t.dueDate,
-              newValue: updatedFields.dueDate,
-            });
-          }
+      //     // Track due date changes
+      //     if (
+      //       updatedFields.dueDate !== undefined &&
+      //       updatedFields.dueDate !== t.dueDate
+      //     ) {
+      //       history.push({
+      //         id: crypto.randomUUID(),
+      //         timestamp: new Date(),
+      //         changeType: "dueDate",
+      //         oldValue: t.dueDate,
+      //         newValue: updatedFields.dueDate,
+      //       });
+      //     }
   
-          // Track start date changes
-          if (
-            updatedFields.startDate !== undefined &&
-            updatedFields.startDate !== t.startDate
-          ) {
-            history.push({
-              id: crypto.randomUUID(),
-              timestamp: new Date(),
-              changeType: "startDate",
-              oldValue: t.startDate,
-              newValue: updatedFields.startDate,
-            });
-          }
+      //     // Track start date changes
+      //     if (
+      //       updatedFields.startDate !== undefined &&
+      //       updatedFields.startDate !== t.startDate
+      //     ) {
+      //       history.push({
+      //         id: crypto.randomUUID(),
+      //         timestamp: new Date(),
+      //         changeType: "startDate",
+      //         oldValue: t.startDate,
+      //         newValue: updatedFields.startDate,
+      //       });
+      //     }
   
           // Track assignee changes
           // if (
@@ -342,14 +353,14 @@ export default function TodoPage() {
           //     newValue: JSON.stringify(updatedFields.assignees),
           //   });
           // }
-  
-          return {
-            ...t,
-            ...updatedFields,
-            history: [...t.history, ...history],
-          };
-        })
-      );
+          
+        //   return {
+        //     ...t,
+        //     ...updatedFields,
+        //     history: [...t.history, ...history],
+        //   };
+        // })
+      // );
   
       setSelectedTodoForEdit(null);
         
@@ -402,6 +413,7 @@ export default function TodoPage() {
         onSave={handleSaveEdit}
         priorities={priorities}
         statuses={statuses}
+        assignees={assignees}
       />
       <TaskHistoryModal
         opened={historyModalOpen}

@@ -14,6 +14,7 @@ from app.core.exceptions import (
     InvalidCredentialsException,
     InvalidPasswordTokenException,
     NotAuthenticatedException,
+    NotFoundException,
 )
 from app.models.user import LoginPassCode, User
 from app.schemas.user import CreateUser, PasswordCredential
@@ -150,3 +151,15 @@ class UserService(BaseService):
     @staticmethod    
     def generate_code() -> str:
         return f"{secrets.randbelow(1_000_000):06d}"
+    
+    async def get_users(self) -> list[User]:
+        results = await self.session.execute(
+            select(User)
+            .where(User.is_deleted == False)
+        )
+        
+        users = results.scalars().all()
+        if not users:
+            raise NotFoundException(entity="User", detail="User(s) not found")
+        
+        return users
